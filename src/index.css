@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+/*
+  our colors. every text color was checked against the background it
+  sits on with scripts/contrast.mjs (run: npm run contrast)
+  WCAG AA = 4.5:1 for normal text, 3:1 for borders
+
+  ink on paper ........ 15.47:1
+  ink on card ......... 16.39:1
+  muted on paper ...... 6.48:1
+  muted on card ....... 6.87:1
+  line on paper ....... 3.17:1  (borders only, not text)
+  accent on paper ..... 7.08:1
+  accent on card ...... 7.50:1
+  white on accent ..... 7.50:1
+  good on card ........ 7.00:1
+  warn on card ........ 6.80:1
+  bad on card ......... 6.54:1
+
+  if you change a color here, change it in the script too and rerun it
+*/
+@theme {
+  --color-paper: #fbf8f3;
+  --color-card: #ffffff;
+  --color-ink: #1c2024;
+  --color-muted: #545b64;
+  --color-line: #858d96;
+  --color-accent: #0a5f5b;
+  --color-accent-ink: #ffffff;
+  --color-good: #17663a;
+  --color-warn: #8a4b00;
+  --color-bad: #b3261e;
+
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* a really obvious focus ring so keyboard users can see where they are */
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* hidden until you press tab */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  padding: 8px 12px;
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+  z-index: 50;
+}
+.skip-link:focus {
+  left: 8px;
+  top: 8px;
+}
+
+/* respect people who turned off animations */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
