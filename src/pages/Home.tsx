@@ -1,8 +1,14 @@
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import SetupChecklist from '../components/SetupChecklist'
+import { isFamily, useAuth } from '../lib/auth'
 import { isConfigured } from '../lib/supabase'
 
 function Home() {
+  const { session, loading } = useAuth()
+
+  // family members go straight to their people
+  if (!loading && isFamily(session)) return <Navigate to="/people" replace />
+
   return (
     <div className="space-y-6">
       <section>
@@ -21,15 +27,9 @@ function Home() {
       {!isConfigured && <SetupChecklist />}
 
       {isConfigured && (
-        <section className="rounded-lg border border-line bg-card p-5">
-          <p>
-            Connected to Supabase. Check that everything is set up on the{' '}
-            <Link to="/debug" className="text-accent underline">
-              status page
-            </Link>
-            .
-          </p>
-        </section>
+        <Link to="/signin" className="btn">
+          Family sign in
+        </Link>
       )}
     </div>
   )

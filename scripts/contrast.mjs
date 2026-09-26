@@ -28,6 +28,8 @@ const pairs = [
   ['good', 'card'],
   ['warn', 'card'],
   ['bad', 'card'],
+  ['accent-ink', 'bad'],
+  ['accent-ink', 'ink'],
 ]
 
 // turns "#rrggbb" into the "relative luminance" number from the WCAG spec

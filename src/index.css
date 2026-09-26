@@ -16,6 +16,8 @@
   good on card ........ 7.00:1
   warn on card ........ 6.80:1
   bad on card ......... 6.54:1
+  white on bad ........ 6.54:1
+  white on ink ........ 16.39:1
 
   if you change a color here, change it in the script too and rerun it
 */
@@ -39,6 +41,54 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans);
+}
+
+/* buttons and form fields we use everywhere */
+.btn,
+.btn-secondary,
+.btn-danger {
+  display: inline-block;
+  border-radius: 6px;
+  padding: 10px 16px;
+  font-weight: 600;
+  text-align: center;
+  cursor: pointer;
+}
+.btn {
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
+}
+.btn-secondary {
+  background: var(--color-card);
+  color: var(--color-accent);
+  border: 2px solid var(--color-accent);
+}
+.btn-danger {
+  background: var(--color-bad);
+  color: var(--color-accent-ink);
+}
+.btn:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  background: var(--color-card);
+  padding: 10px 12px;
+  /* 16px stops iphones from zooming in when you tap the box */
+  font-size: 16px;
 }
 
 /* a really obvious focus ring so keyboard users can see where they are */
