@@ -42,3 +42,30 @@ export const flaccNames: Record<FlaccCategory, string> = {
   cry: 'Cry',
   consolability: 'Consolability',
 }
+
+// a QR code the family made for a stranger
+export type Grant = {
+  id: string
+  person_id: string
+  token: string
+  label: string | null
+  expires_at: string
+  revoked_at: string | null
+  created_at: string
+}
+
+// the link a stranger opens (the QR code just holds this)
+export function codeLink(token: string) {
+  return window.location.origin + '/c/' + token
+}
+
+// "Sat, Sep 26, 3:00 PM"
+export function niceTime(iso: string) {
+  return new Date(iso).toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}

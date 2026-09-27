@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import SignalTile from '../components/SignalTile'
+import LexiconGrid from '../components/LexiconGrid'
 import { getErrorMessage } from '../lib/errors'
+import { loadLexicon } from '../lib/lexicon'
 import { supabase } from '../lib/supabase'
 import type { Person as PersonRow, Signal } from '../lib/types'
 
@@ -35,33 +36,10 @@ function Person() {
         }
         setPerson(personData)
 
-        // their clips
-        const { data: signalData, error: signalError } = await supabase
-          .from('signals')
-          .select('*')
-          .eq('person_id', personId)
-          .order('created_at', { ascending: true })
-        if (signalError) throw signalError
-        const list = (signalData ?? []) as Signal[]
-        setSignals(list)
-
-        // the bucket is private, so we ask for links that work for 1 hour
-        const paths: string[] = []
-        for (const s of list) {
-          paths.push(s.video_path)
-          if (s.poster_path) paths.push(s.poster_path)
-        }
-        if (paths.length > 0) {
-          const { data: signed, error: signError } = await supabase.storage
-            .from('signals')
-            .createSignedUrls(paths, 60 * 60)
-          if (signError) throw signError
-          const map: Record<string, string> = {}
-          for (const item of signed ?? []) {
-            if (item.path && item.signedUrl) map[item.path] = item.signedUrl
-          }
-          setUrls(map)
-        }
+        // their clips (links last 1 hour)
+        const lexicon = await loadLexicon(personId, 60 * 60)
+        setSignals(lexicon.signals)
+        setUrls(lexicon.urls)
       } catch (err) {
         setError(getErrorMessage(err))
       } finally {
@@ -94,13 +72,17 @@ function Person() {
         ← Your people
       </Link>
 
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-serif text-3xl font-bold">{person.name}</h1>
-          {person.about && <p className="mt-1 text-muted">{person.about}</p>}
-        </div>
+      <div className="mt-2">
+        <h1 className="font-serif text-3xl font-bold">{person.name}</h1>
+        {person.about && <p className="mt-1 text-muted">{person.about}</p>}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-3">
         <Link to={'/people/' + person.id + '/record'} className="btn">
           + Record a signal
+        </Link>
+        <Link to={'/people/' + person.id + '/codes'} className="btn-secondary">
+          Share with a nurse or aide
         </Link>
       </div>
 
@@ -112,22 +94,9 @@ function Person() {
           </p>
         </div>
       ) : (
-        <>
-          <p className="mt-6 text-muted">
-            {signals.length} {signals.length === 1 ? 'signal' : 'signals'}. Every clip plays at once, so
-            you can just look until one matches.
-          </p>
-          <ul className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {signals.map((signal) => (
-              <SignalTile
-                key={signal.id}
-                signal={signal}
-                videoUrl={urls[signal.video_path] ?? null}
-                posterUrl={signal.poster_path ? (urls[signal.poster_path] ?? null) : null}
-              />
-            ))}
-          </ul>
-        </>
+        <div className="mt-8">
+          <LexiconGrid signals={signals} urls={urls} />
+        </div>
       )}
     </div>
   )

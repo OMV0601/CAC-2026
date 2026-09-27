@@ -45,3 +45,25 @@ export function useAuth() {
 export function isFamily(session: Session | null) {
   return session !== null && !session.user.is_anonymous
 }
+
+// makes sure SOMEBODY is signed in. if nobody is, signs in anonymously.
+// this is how a stranger gets a real user id without making an account.
+// we keep the promise around so two calls at once dont make two users
+let signingIn: Promise<void> | null = null
+
+export function ensureSignedIn(): Promise<void> {
+  if (!signingIn) {
+    signingIn = (async () => {
+      if (!supabase) throw new Error('Supabase is not set up')
+      const { data } = await supabase.auth.getSession()
+      if (data.session) return
+      const { error } = await supabase.auth.signInAnonymously()
+      if (error) throw error
+    })()
+    // if it failed, let the next call try again
+    signingIn.catch(() => {
+      signingIn = null
+    })
+  }
+  return signingIn
+}
