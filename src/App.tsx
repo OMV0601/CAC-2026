@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase'
 import Codes from './pages/Codes'
 import Debug from './pages/Debug'
 import Home from './pages/Home'
+import Inbox from './pages/Inbox'
 import People from './pages/People'
 import Person from './pages/Person'
 import RecordSignal from './pages/RecordSignal'
@@ -49,6 +50,9 @@ function App() {
                 <>
                   <Link to="/people" className="text-muted underline">
                     People
+                  </Link>
+                  <Link to="/inbox" className="text-muted underline">
+                    Inbox
                   </Link>
                   <button type="button" onClick={signOut} className="text-muted underline">
                     Sign out
@@ -102,6 +106,14 @@ function App() {
             }
           />
 
+          <Route
+            path="/inbox"
+            element={
+              <RequireAuth>
+                <Inbox />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/people/:personId/codes"
             element={

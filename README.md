@@ -19,7 +19,7 @@ Lexicon never interprets. It only retrieves.
 3. In Supabase:
    - **Storage → New bucket** → name it `signals` → **Public OFF**
    - **SQL Editor** → run each file in `supabase/migrations/` in order
-     (0001 through 0006)
+     (0001 through 0007)
    - **Authentication → Sign In / Providers → Email** → turn off "Confirm email"
      (or leave it on and click the link in the email after signing up)
    - Same page → turn ON **anonymous sign-ins** (strangers with a code need it)

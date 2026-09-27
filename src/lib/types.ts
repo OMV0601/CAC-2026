@@ -69,3 +69,18 @@ export function niceTime(iso: string) {
     minute: '2-digit',
   })
 }
+
+// a stranger's "what is this?" question
+export type AskStatus = 'open' | 'answered' | 'unknown'
+
+export type Ask = {
+  id: string
+  person_id: string
+  video_path: string | null
+  mime_type: string | null
+  note: string | null
+  status: AskStatus
+  answer: string | null
+  answered_at: string | null
+  created_at: string
+}

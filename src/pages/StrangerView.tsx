@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import AskFamily from '../components/AskFamily'
+import CompareClip from '../components/CompareClip'
 import LexiconGrid from '../components/LexiconGrid'
 import SetupChecklist from '../components/SetupChecklist'
 import { ensureSignedIn } from '../lib/auth'
@@ -33,6 +35,8 @@ function StrangerView() {
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [problem, setProblem] = useState('')
+  // the clip they tapped "compare" on
+  const [picked, setPicked] = useState<Signal | null>(null)
 
   useEffect(() => {
     async function open() {
@@ -99,13 +103,39 @@ function StrangerView() {
         {niceTime(info.expires_at)}.
       </p>
 
+      {/* side by side compare opens on top of everything */}
+      {picked && (
+        <div className="mt-6">
+          <CompareClip
+            key={picked.id}
+            signal={picked}
+            familyUrl={urls[picked.video_path] ?? null}
+            onClose={() => setPicked(null)}
+          />
+        </div>
+      )}
+
       {signals.length === 0 ? (
         <p className="mt-8 rounded-lg border border-line bg-card p-5 text-muted">
           The family hasn't recorded any signals yet.
         </p>
       ) : (
-        <div className="mt-6">
-          <LexiconGrid signals={signals} urls={urls} />
+        <div className={'mt-6 ' + (picked ? 'hidden' : '')}>
+          <LexiconGrid
+            signals={signals}
+            urls={urls}
+            onPick={(signal) => {
+              setPicked(signal)
+              window.scrollTo({ top: 0 })
+            }}
+          />
+        </div>
+      )}
+
+      {/* layer 3 and 4: ask the family */}
+      {!picked && token && (
+        <div className="mt-8">
+          <AskFamily personId={info.person_id} personName={info.person_name} token={token} />
         </div>
       )}
 

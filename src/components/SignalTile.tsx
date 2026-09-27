@@ -4,6 +4,8 @@ type Props = {
   signal: Signal
   videoUrl: string | null
   posterUrl: string | null
+  // only on the stranger page: "this looks like it" button
+  onPick?: () => void
 }
 
 // one clip in the grid.
@@ -12,7 +14,7 @@ type Props = {
 //   loop        - keeps playing so you can just watch
 //   autoPlay    - a wall of play buttons is useless when you're in a hurry
 //   playsInline - without this iphones go fullscreen for every single tile
-function SignalTile({ signal, videoUrl, posterUrl }: Props) {
+function SignalTile({ signal, videoUrl, posterUrl, onPick }: Props) {
   return (
     <li className="overflow-hidden rounded-lg border border-line bg-card">
       <div className="aspect-square bg-ink">
@@ -62,6 +64,12 @@ function SignalTile({ signal, videoUrl, posterUrl }: Props) {
             </span>
           )}
         </div>
+
+        {onPick && (
+          <button type="button" onClick={onPick} className="btn-secondary mt-3 w-full text-sm">
+            Looks like this? Compare
+          </button>
+        )}
       </div>
     </li>
   )

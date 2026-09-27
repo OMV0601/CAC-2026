@@ -1,29 +1,21 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import ClipRecorder, { type RecordedClip } from '../components/ClipRecorder'
 import { getErrorMessage } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { bodyRegionNames, flaccNames, type BodyRegion, type FlaccCategory } from '../lib/types'
-import { baseType, fileExtension, getCamera, makePoster, pickMimeType, stopCamera } from '../lib/video'
+import { baseType, fileExtension, makePoster } from '../lib/video'
 
 // longest clip you can record
 const MAX_SECONDS = 15
-
-// what the page is doing right now
-type Stage = 'starting' | 'live' | 'recording' | 'review' | 'error'
 
 function RecordSignal() {
   const { personId } = useParams()
   const navigate = useNavigate()
 
-  const [stage, setStage] = useState<Stage>('starting')
-  const [cameraError, setCameraError] = useState('')
-  const [seconds, setSeconds] = useState(0)
-
-  // the recorded clip
-  const [clip, setClip] = useState<Blob | null>(null)
-  const [clipType, setClipType] = useState('')
+  // the recorded clip (null = still recording)
+  const [clip, setClip] = useState<RecordedClip | null>(null)
   const [clipUrl, setClipUrl] = useState('')
-  const [durationMs, setDurationMs] = useState(0)
   const [poster, setPoster] = useState<Blob | null>(null)
 
   // the form
@@ -36,159 +28,41 @@ function RecordSignal() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
-  // refs = things we need to hold onto that dont need a re-render
-  const videoRef = useRef<HTMLVideoElement>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const recorderRef = useRef<MediaRecorder | null>(null)
-  const chunksRef = useRef<Blob[]>([])
-  const startTimeRef = useRef(0)
-  const timerRef = useRef<number | null>(null)
-  const mountedRef = useRef(true)
-
-  // show the live camera in the video box
-  function showLive(stream: MediaStream) {
-    const video = videoRef.current
-    if (!video) return
-    video.removeAttribute('src')
-    video.srcObject = stream
-    video.muted = true // or you hear yourself echo
-    video.play().catch(() => {})
-  }
-
-  async function startCamera() {
-    setStage('starting')
-    setCameraError('')
-    try {
-      const stream = await getCamera()
-      // if we left the page while waiting, turn it straight back off
-      if (!mountedRef.current) {
-        stopCamera(stream)
-        return
-      }
-      streamRef.current = stream
-      showLive(stream)
-      setStage('live')
-    } catch (err) {
-      if (!mountedRef.current) return
-      setCameraError(getErrorMessage(err))
-      setStage('error')
-    }
-  }
-
-  // turn the camera on when the page opens, and off when it closes
-  useEffect(() => {
-    mountedRef.current = true
-    startCamera()
-    return () => {
-      mountedRef.current = false
-      if (timerRef.current) clearInterval(timerRef.current)
-      stopCamera(streamRef.current)
-      streamRef.current = null
-    }
-  }, [])
-
-  // free the memory for the old clip when we make a new one
+  // free the memory for the old preview when it changes
   useEffect(() => {
     return () => {
       if (clipUrl) URL.revokeObjectURL(clipUrl)
     }
   }, [clipUrl])
 
-  function startRecording() {
-    const stream = streamRef.current
-    if (!stream) return
-    if (typeof MediaRecorder === 'undefined') {
-      setCameraError("This browser can't record video. Try Chrome or Safari.")
-      setStage('error')
-      return
-    }
-
-    const mimeType = pickMimeType()
-    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream)
-    chunksRef.current = []
-
-    recorder.ondataavailable = (e) => {
-      if (e.data && e.data.size > 0) chunksRef.current.push(e.data)
-    }
-    recorder.onstop = () => finishRecording(recorder)
-
-    recorder.start()
-    recorderRef.current = recorder
-    startTimeRef.current = Date.now()
-    setSeconds(0)
-    setStage('recording')
-
-    // count up, and stop by itself at the max
-    timerRef.current = window.setInterval(() => {
-      const secs = Math.floor((Date.now() - startTimeRef.current) / 1000)
-      setSeconds(secs)
-      if (secs >= MAX_SECONDS) stopRecording()
-    }, 250)
-  }
-
-  function stopRecording() {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
-    const recorder = recorderRef.current
-    if (recorder && recorder.state !== 'inactive') recorder.stop()
-  }
-
-  async function finishRecording(recorder: MediaRecorder) {
-    const duration = Date.now() - startTimeRef.current
-    // store what the browser REALLY recorded, not what we asked for
-    const type = recorder.mimeType || chunksRef.current[0]?.type || 'video/webm'
-    const blob = new Blob(chunksRef.current, { type })
-
-    // camera off, we're done with it
-    stopCamera(streamRef.current)
-    streamRef.current = null
-
-    // play the clip back.
-    // srcObject always wins over src, so we HAVE to clear it first
-    // or the recorded clip never shows up
-    const url = URL.createObjectURL(blob)
-    const video = videoRef.current
-    if (video) {
-      video.srcObject = null
-      video.src = url
-      video.muted = false
-      video.play().catch(() => {})
-    }
-
-    setClip(blob)
-    setClipType(type)
-    setClipUrl(url)
-    setDurationMs(duration)
-    setStage('review')
-
+  async function handleClip(recorded: RecordedClip) {
+    setClip(recorded)
+    setClipUrl(URL.createObjectURL(recorded.blob))
     // grab a still frame for the grid
-    setPoster(await makePoster(blob))
+    setPoster(await makePoster(recorded.blob))
   }
 
   function recordAgain() {
     setClip(null)
-    setPoster(null)
     setClipUrl('')
-    startCamera()
+    setPoster(null)
   }
 
   async function handleSave(e: FormEvent) {
     e.preventDefault()
-    if (!supabase || !personId || !clip) return
+    if (!supabase || !personId || !clip || saving) return
     setSaving(true)
     setSaveError('')
 
     const id = crypto.randomUUID()
-    const videoPath = personId + '/' + id + '.' + fileExtension(clipType)
+    const videoPath = personId + '/' + id + '.' + fileExtension(clip.mimeType)
     let posterPath: string | null = null
     const bucket = supabase.storage.from('signals')
 
     try {
       // 1. upload the video
-      const { error: videoError } = await bucket.upload(videoPath, clip, {
-        contentType: baseType(clipType),
+      const { error: videoError } = await bucket.upload(videoPath, clip.blob, {
+        contentType: baseType(clip.mimeType),
       })
       if (videoError) throw videoError
 
@@ -211,8 +85,8 @@ function RecordSignal() {
         flacc_category: flacc || null,
         video_path: videoPath,
         poster_path: posterPath,
-        mime_type: clipType,
-        duration_ms: durationMs,
+        mime_type: clip.mimeType,
+        duration_ms: clip.durationMs,
       })
       if (insertError) {
         // dont leave files lying around with no row pointing at them
@@ -237,59 +111,22 @@ function RecordSignal() {
         Film one thing they do, up to {MAX_SECONDS} seconds. Then say what it means.
       </p>
 
-      {/* the one video box. shows the live camera, then the recorded clip */}
-      <div className="relative mt-4 overflow-hidden rounded-lg bg-ink">
-        <video
-          ref={videoRef}
-          playsInline
-          autoPlay
-          loop={stage === 'review'}
-          controls={stage === 'review'}
-          className={'aspect-[4/3] w-full object-cover ' + (stage === 'error' ? 'hidden' : '')}
-        />
-        {stage === 'starting' && (
-          <p className="absolute inset-0 flex items-center justify-center text-accent-ink">
-            Turning on the camera…
-          </p>
-        )}
-        {stage === 'recording' && (
-          <p className="absolute left-3 top-3 rounded bg-bad px-2 py-1 text-sm font-bold text-accent-ink">
-            ● REC {seconds}s / {MAX_SECONDS}s
-          </p>
-        )}
-      </div>
-
-      {/* screen readers hear what's happening */}
-      <p className="sr-only" aria-live="polite">
-        {stage === 'recording' ? 'Recording' : stage === 'review' ? 'Recording finished' : ''}
-      </p>
-
-      {stage === 'error' && (
-        <div className="mt-4 rounded-lg border border-bad bg-card p-4">
-          <p role="alert" className="text-bad">
-            {cameraError}
-          </p>
-          <button type="button" onClick={startCamera} className="btn mt-3">
-            Try again
-          </button>
+      {!clip && (
+        <div className="mt-4">
+          <ClipRecorder maxSeconds={MAX_SECONDS} doneLabel="Use this clip" onDone={handleClip} />
         </div>
       )}
 
-      {stage === 'live' && (
-        <button type="button" onClick={startRecording} className="btn mt-4 w-full">
-          Start recording
-        </button>
-      )}
-
-      {stage === 'recording' && (
-        <button type="button" onClick={stopRecording} className="btn-danger mt-4 w-full">
-          Stop
-        </button>
-      )}
-
-      {stage === 'review' && (
-        <form onSubmit={handleSave} className="mt-6 space-y-5">
-          <button type="button" onClick={recordAgain} className="btn-secondary">
+      {clip && (
+        <form onSubmit={handleSave} className="mt-4 space-y-5">
+          <video
+            src={clipUrl}
+            controls
+            loop
+            playsInline
+            className="aspect-[4/3] w-full rounded-lg bg-ink object-cover"
+          />
+          <button type="button" onClick={recordAgain} disabled={saving} className="btn-secondary">
             Record again
           </button>
 

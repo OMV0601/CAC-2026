@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import SetupChecklist from '../components/SetupChecklist'
 import { isFamily, useAuth } from '../lib/auth'
-import { getErrorMessage } from '../lib/errors'
+import { getAuthErrorMessage } from '../lib/authErrors'
 import { supabase } from '../lib/supabase'
 
 // sign in and sign up are the same form, just a different button
@@ -18,8 +18,10 @@ function SignIn() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
-  // where to go after signing in (RequireAuth saves this for us)
-  const from = (location.state as { from?: string } | null)?.from ?? '/people'
+  // where to go after signing in (RequireAuth saves this for us).
+  // only allow paths inside our own app, never some other website
+  const saved = (location.state as { from?: string } | null)?.from
+  const from = saved && saved.startsWith('/') && !saved.startsWith('//') ? saved : '/people'
 
   if (!supabase) return <SetupChecklist />
 
@@ -28,28 +30,51 @@ function SignIn() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!supabase) return
+    if (!supabase || busy) return
+
+    // " Om@Gmail.com " and "om@gmail.com" should be the same account
+    const cleanEmail = email.trim().toLowerCase()
+    if (!cleanEmail.includes('@')) {
+      setError("That doesn't look like a real email address.")
+      return
+    }
+    if (mode === 'signup' && password.length < 8) {
+      setError('Use at least 8 characters for your password.')
+      return
+    }
+
     setBusy(true)
     setError('')
     setMessage('')
 
     try {
+      // if this browser opened a nurse code before, it has a guest session.
+      // get rid of it so the family account starts clean
+      if (session && session.user.is_anonymous) {
+        await supabase.auth.signOut({ scope: 'local' })
+      }
+
       if (mode === 'signin') {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
         if (error) throw error
         navigate(from, { replace: true })
       } else {
-        const { data, error } = await supabase.auth.signUp({ email, password })
+        const { data, error } = await supabase.auth.signUp({ email: cleanEmail, password })
         if (error) throw error
+
         if (data.session) {
           navigate(from, { replace: true })
+        } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+          // supabase does this (no error, no identities) when the email is
+          // already taken and "Confirm email" is on
+          setError('That email already has an account. Sign in instead.')
         } else {
-          // this happens when "Confirm email" is turned on in supabase
+          // "Confirm email" is on in supabase, so they need to click the link
           setMessage('Account made! Check your email for a link to confirm it, then sign in.')
         }
       }
     } catch (err) {
-      setError(getErrorMessage(err))
+      setError(getAuthErrorMessage(err))
     } finally {
       setBusy(false)
     }
@@ -87,12 +112,12 @@ function SignIn() {
             type="password"
             autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
             required
-            minLength={6}
+            minLength={mode === 'signup' ? 8 : undefined}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="input"
           />
-          {mode === 'signup' && <p className="mt-1 text-sm text-muted">At least 6 characters.</p>}
+          {mode === 'signup' && <p className="mt-1 text-sm text-muted">At least 8 characters.</p>}
         </div>
 
         {error && (

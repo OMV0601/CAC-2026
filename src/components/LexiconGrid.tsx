@@ -5,12 +5,14 @@ import SignalTile from './SignalTile'
 type Props = {
   signals: Signal[]
   urls: Record<string, string>
+  // only on the stranger page, for side by side comparing
+  onPick?: (signal: Signal) => void
 }
 
 // layer 1 (LOOK): every clip playing at once, just look until one matches
 // layer 2 (POINT): tap WHERE it's happening to cut the grid down.
 // no words needed for either one
-function LexiconGrid({ signals, urls }: Props) {
+function LexiconGrid({ signals, urls, onPick }: Props) {
   const [region, setRegion] = useState<BodyRegion | 'all'>('all')
   const [soundOnly, setSoundOnly] = useState(false)
 
@@ -96,6 +98,7 @@ function LexiconGrid({ signals, urls }: Props) {
             signal={signal}
             videoUrl={urls[signal.video_path] ?? null}
             posterUrl={signal.poster_path ? (urls[signal.poster_path] ?? null) : null}
+            onPick={onPick ? () => onPick(signal) : undefined}
           />
         ))}
       </ul>
