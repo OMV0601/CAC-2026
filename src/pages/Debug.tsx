@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getErrorMessage } from '../lib/errors'
+import { vapidPublicKey } from '../lib/push'
 import { isConfigured, supabase, supabaseKey, supabaseUrl } from '../lib/supabase'
 
 // the status board. it checks each piece of setup from INSIDE the
@@ -50,6 +51,15 @@ async function runChecks(): Promise<Check[]> {
     detail: supabaseKey
       ? 'Set (starts with ' + supabaseKey.slice(0, 12) + '...)'
       : 'Missing. Add it to .env.local (or Vercel env vars, then redeploy).',
+  })
+
+  // phone alerts are a bonus, so missing = skipped, not a problem
+  results.push({
+    name: 'VITE_VAPID_PUBLIC_KEY',
+    status: vapidPublicKey ? 'ok' : 'skipped',
+    detail: vapidPublicKey
+      ? 'Set. Phone alerts can work.'
+      : 'Not set, so phone alerts are off. Run: npm run vapid -- you@example.com',
   })
 
   // no point checking the rest without a client
@@ -180,7 +190,7 @@ function Debug() {
     }
   }, [runCount])
 
-  const allGood = !loading && checks.length > 0 && checks.every((c) => c.status === 'ok')
+  const allGood = !loading && checks.length > 0 && checks.every((c) => c.status !== 'bad')
 
   return (
     <div>

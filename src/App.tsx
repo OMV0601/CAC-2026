@@ -2,6 +2,7 @@ import { Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import RequireAuth from './components/RequireAuth'
 import { isFamily, useAuth } from './lib/auth'
 import { supabase } from './lib/supabase'
+import AccessLog from './pages/AccessLog'
 import Codes from './pages/Codes'
 import Debug from './pages/Debug'
 import Home from './pages/Home'
@@ -9,6 +10,7 @@ import Inbox from './pages/Inbox'
 import People from './pages/People'
 import Person from './pages/Person'
 import RecordSignal from './pages/RecordSignal'
+import SaveAskAsSignal from './pages/SaveAskAsSignal'
 import SignIn from './pages/SignIn'
 import StrangerView from './pages/StrangerView'
 
@@ -106,6 +108,22 @@ function App() {
             }
           />
 
+          <Route
+            path="/asks/:askId/save"
+            element={
+              <RequireAuth>
+                <SaveAskAsSignal />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/people/:personId/log"
+            element={
+              <RequireAuth>
+                <AccessLog />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/inbox"
             element={

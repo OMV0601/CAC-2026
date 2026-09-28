@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import LexiconGrid from '../components/LexiconGrid'
 import { getErrorMessage } from '../lib/errors'
 import { loadLexicon } from '../lib/lexicon'
+import { deleteSignal } from '../lib/saveSignal'
 import { supabase } from '../lib/supabase'
 import type { Person as PersonRow, Signal } from '../lib/types'
 
@@ -49,6 +50,17 @@ function Person() {
     load()
   }, [personId])
 
+  async function handleDelete(signal: Signal) {
+    const ok = window.confirm('Delete "' + signal.title + '"? This can\'t be undone.')
+    if (!ok) return
+    try {
+      await deleteSignal(signal)
+      setSignals(signals.filter((s) => s.id !== signal.id))
+    } catch (err) {
+      window.alert("Couldn't delete: " + getErrorMessage(err))
+    }
+  }
+
   if (loading) return <p className="text-muted">Loading…</p>
 
   if (error) {
@@ -84,6 +96,9 @@ function Person() {
         <Link to={'/people/' + person.id + '/codes'} className="btn-secondary">
           Share with a nurse or aide
         </Link>
+        <Link to={'/people/' + person.id + '/log'} className="btn-secondary">
+          Who looked
+        </Link>
       </div>
 
       {signals.length === 0 ? (
@@ -95,7 +110,7 @@ function Person() {
         </div>
       ) : (
         <div className="mt-8">
-          <LexiconGrid signals={signals} urls={urls} />
+          <LexiconGrid signals={signals} urls={urls} onDelete={handleDelete} />
         </div>
       )}
     </div>

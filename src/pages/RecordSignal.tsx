@@ -1,10 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import ClipRecorder, { type RecordedClip } from '../components/ClipRecorder'
+import SignalFields, { emptySignalFields, type SignalFieldValues } from '../components/SignalFields'
 import { getErrorMessage } from '../lib/errors'
-import { supabase } from '../lib/supabase'
-import { bodyRegionNames, flaccNames, type BodyRegion, type FlaccCategory } from '../lib/types'
-import { baseType, fileExtension, makePoster } from '../lib/video'
+import { saveSignal } from '../lib/saveSignal'
+import { makePoster } from '../lib/video'
 
 // longest clip you can record
 const MAX_SECONDS = 15
@@ -18,13 +18,7 @@ function RecordSignal() {
   const [clipUrl, setClipUrl] = useState('')
   const [poster, setPoster] = useState<Blob | null>(null)
 
-  // the form
-  const [title, setTitle] = useState('')
-  const [meaning, setMeaning] = useState('')
-  const [action, setAction] = useState('')
-  const [bodyRegion, setBodyRegion] = useState<BodyRegion>('whole_body')
-  const [hasSound, setHasSound] = useState(false)
-  const [flacc, setFlacc] = useState<FlaccCategory | ''>('')
+  const [fields, setFields] = useState<SignalFieldValues>(emptySignalFields)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -50,50 +44,18 @@ function RecordSignal() {
 
   async function handleSave(e: FormEvent) {
     e.preventDefault()
-    if (!supabase || !personId || !clip || saving) return
+    if (!personId || !clip || saving) return
     setSaving(true)
     setSaveError('')
-
-    const id = crypto.randomUUID()
-    const videoPath = personId + '/' + id + '.' + fileExtension(clip.mimeType)
-    let posterPath: string | null = null
-    const bucket = supabase.storage.from('signals')
-
     try {
-      // 1. upload the video
-      const { error: videoError } = await bucket.upload(videoPath, clip.blob, {
-        contentType: baseType(clip.mimeType),
+      await saveSignal({
+        personId,
+        video: clip.blob,
+        mimeType: clip.mimeType,
+        durationMs: clip.durationMs,
+        poster,
+        fields,
       })
-      if (videoError) throw videoError
-
-      // 2. upload the poster (if it fails thats ok, the grid just has no poster)
-      if (poster) {
-        const path = personId + '/' + id + '.jpg'
-        const { error: posterError } = await bucket.upload(path, poster, { contentType: 'image/jpeg' })
-        if (!posterError) posterPath = path
-      }
-
-      // 3. save the row
-      const { error: insertError } = await supabase.from('signals').insert({
-        id,
-        person_id: personId,
-        title: title.trim(),
-        meaning: meaning.trim(),
-        action: action.trim() || null,
-        body_region: bodyRegion,
-        has_sound: hasSound,
-        flacc_category: flacc || null,
-        video_path: videoPath,
-        poster_path: posterPath,
-        mime_type: clip.mimeType,
-        duration_ms: clip.durationMs,
-      })
-      if (insertError) {
-        // dont leave files lying around with no row pointing at them
-        await bucket.remove(posterPath ? [videoPath, posterPath] : [videoPath])
-        throw insertError
-      }
-
       navigate('/people/' + personId)
     } catch (err) {
       setSaveError(getErrorMessage(err))
@@ -130,105 +92,7 @@ function RecordSignal() {
             Record again
           </button>
 
-          <div>
-            <label htmlFor="title" className="label">
-              What does it look like?
-            </label>
-            <input
-              id="title"
-              required
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Rocks forward and hums low"
-              className="input"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="meaning" className="label">
-              What does it mean?
-            </label>
-            <input
-              id="meaning"
-              required
-              value={meaning}
-              onChange={(e) => setMeaning(e.target.value)}
-              placeholder="e.g. Tummy pain"
-              className="input"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="action" className="label">
-              What should someone do? <span className="font-normal text-muted">(optional)</span>
-            </label>
-            <input
-              id="action"
-              value={action}
-              onChange={(e) => setAction(e.target.value)}
-              placeholder="e.g. Check when they last ate, offer the heat pack"
-              className="input"
-            />
-          </div>
-
-          {/* this is what the "point" filter uses later */}
-          <fieldset>
-            <legend className="label">Where on the body?</legend>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {(Object.keys(bodyRegionNames) as BodyRegion[]).map((region) => (
-                <label
-                  key={region}
-                  className={
-                    'cursor-pointer rounded-md border px-3 py-2 ' +
-                    (bodyRegion === region ? 'border-accent bg-accent text-accent-ink' : 'border-line bg-card')
-                  }
-                >
-                  <input
-                    type="radio"
-                    name="region"
-                    value={region}
-                    checked={bodyRegion === region}
-                    onChange={() => setBodyRegion(region)}
-                    className="sr-only"
-                  />
-                  {bodyRegionNames[region]}
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          {/* separate from body region because you can hum while rocking */}
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={hasSound}
-              onChange={(e) => setHasSound(e.target.checked)}
-              className="h-5 w-5"
-            />
-            It makes a sound
-          </label>
-
-          <div>
-            <label htmlFor="flacc" className="label">
-              Is it a pain sign? <span className="font-normal text-muted">(optional)</span>
-            </label>
-            <select
-              id="flacc"
-              value={flacc}
-              onChange={(e) => setFlacc(e.target.value as FlaccCategory | '')}
-              className="input"
-            >
-              <option value="">No / not sure</option>
-              {(Object.keys(flaccNames) as FlaccCategory[]).map((cat) => (
-                <option key={cat} value={cat}>
-                  Yes: {flaccNames[cat]}
-                </option>
-              ))}
-            </select>
-            <p className="mt-1 text-sm text-muted">
-              These are the categories from the FLACC pain scale nurses already use.
-            </p>
-          </div>
+          <SignalFields value={fields} onChange={setFields} />
 
           {saveError && (
             <p role="alert" className="text-bad">

@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import PushToggle from '../components/PushToggle'
 import { getErrorMessage } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { niceTime, type Ask } from '../lib/types'
@@ -14,6 +16,8 @@ type AskRow = Ask & {
 function Inbox() {
   const [asks, setAsks] = useState<AskRow[]>([])
   const [urls, setUrls] = useState<Record<string, string>>({})
+  // asks that were already saved as a signal
+  const [savedAskIds, setSavedAskIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -29,6 +33,9 @@ function Inbox() {
       if (error) throw error
       const rows = (data ?? []) as AskRow[]
       setAsks(rows)
+
+      const { data: saved } = await supabase.from('signals').select('source_ask_id').not('source_ask_id', 'is', null)
+      setSavedAskIds((saved ?? []).map((s) => s.source_ask_id as string))
 
       const paths = rows.map((a) => a.video_path).filter((p): p is string => !!p)
       if (paths.length > 0) {
@@ -77,6 +84,8 @@ function Inbox() {
         </p>
       </div>
 
+      <PushToggle />
+
       {error && (
         <p role="alert" className="text-bad">
           {error}
@@ -118,6 +127,14 @@ function Inbox() {
                     <span className="font-semibold">You said you didn't recognise it.</span>
                   )}
                 </p>
+                {ask.status === 'answered' &&
+                  (savedAskIds.includes(ask.id) ? (
+                    <p className="mt-2 text-sm text-good">✓ Saved as a signal</p>
+                  ) : (
+                    <Link to={'/asks/' + ask.id + '/save'} className="btn-secondary mt-2 text-sm">
+                      Save as a signal
+                    </Link>
+                  ))}
               </li>
             ))}
           </ul>

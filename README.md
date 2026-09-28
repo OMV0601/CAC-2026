@@ -19,7 +19,7 @@ Lexicon never interprets. It only retrieves.
 3. In Supabase:
    - **Storage → New bucket** → name it `signals` → **Public OFF**
    - **SQL Editor** → run each file in `supabase/migrations/` in order
-     (0001 through 0007)
+     (0001 through 0008)
    - **Authentication → Sign In / Providers → Email** → turn off "Confirm email"
      (or leave it on and click the link in the email after signing up)
    - Same page → turn ON **anonymous sign-ins** (strangers with a code need it)
@@ -29,16 +29,31 @@ Lexicon never interprets. It only retrieves.
 Testing the camera on a phone needs https, so use the Vercel link for that
 (localhost works on the laptop itself).
 
+## Phone alerts (web push)
+
+1. `npm run vapid -- you@example.com`
+   - prints the PUBLIC key -> put it in `.env.local` as `VITE_VAPID_PUBLIC_KEY`
+     (and in Vercel)
+   - saves the PRIVATE key to `.vapid.local` (never printed, never committed)
+2. `npx supabase login`
+3. `npx supabase link --project-ref <your project id>`
+4. `npx supabase secrets set --env-file .vapid.local`
+5. `npx supabase functions deploy notify-ask`
+
+Push is a bonus. If it's not set up, asks still reach the family's inbox live.
+On iPhone, alerts only work after "Add to Home Screen".
+
 ## Scripts
 
 - `npm run dev` - run locally
 - `npm run build` - build for production
 - `npm run contrast` - check our colors pass WCAG contrast
+- `npm run vapid` - make the keys for phone alerts
 
 ## Deploying on Vercel
 
 Import the repo (preset: Vite), add `VITE_SUPABASE_URL` and
-`VITE_SUPABASE_ANON_KEY` as env variables (NOT sensitive), then redeploy.
+`VITE_SUPABASE_ANON_KEY` and `VITE_VAPID_PUBLIC_KEY` as env variables (NOT sensitive), then redeploy.
 Vite bakes env variables in at build time, so any change needs a redeploy.
 
 Never put the `service_role` / secret key anywhere in this repo.

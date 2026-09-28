@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getErrorMessage } from '../lib/errors'
+import { notifyFamily } from '../lib/push'
 import { supabase } from '../lib/supabase'
 import type { Ask } from '../lib/types'
 import { baseType, fileExtension } from '../lib/video'
@@ -108,6 +109,9 @@ function AskFamily({ personId, personName, token }: Props) {
         p_note: note,
       })
       if (askError) throw askError
+
+      // buzz the family's phones. if it fails thats fine, realtime is the main path
+      notifyFamily(data as string)
 
       setAskId(data as string)
       setSentAt(Date.now())
