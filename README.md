@@ -2,14 +2,25 @@
 
 A video dictionary for people who can't speak. Families record the sounds and
 movements only they understand, and a nurse or aide who has never met the
-person scans a code and looks them up.
+person scans a code and looks them up. No account needed.
 
-Lexicon never interprets. It only retrieves.
+**Lexicon never interprets. It only retrieves.** No AI guesses what a signal
+means. A person always decides.
+
+## How it works
+
+1. **Look**: every clip plays at once, muted and looping
+2. **Point**: tap where it's happening (hands / face / legs / whole body / sound)
+3. **Ask**: film 5 seconds, the family's phone buzzes, the answer shows up live
+4. **Honest no**: if nobody recognises it, Lexicon says so instead of guessing
+
+Plus side-by-side confirming, codes that expire, instant revoke, and a log of
+everyone who looked.
 
 ## Stack
 
 - Vite + React 19 + TypeScript + Tailwind v4
-- Supabase (database, auth, storage)
+- Supabase (database, auth, storage, realtime, edge function)
 - Vercel (hosting)
 
 ## Setup
@@ -19,15 +30,21 @@ Lexicon never interprets. It only retrieves.
 3. In Supabase:
    - **Storage → New bucket** → name it `signals` → **Public OFF**
    - **SQL Editor** → run each file in `supabase/migrations/` in order
-     (0001 through 0008)
+     (0001 through 0009)
    - **Authentication → Sign In / Providers → Email** → turn off "Confirm email"
-     (or leave it on and click the link in the email after signing up)
    - Same page → turn ON **anonymous sign-ins** (strangers with a code need it)
 4. `npm run dev`
-5. Open `/debug` and make sure every row is green
+5. Open `/debug` and make sure nothing is red
 
-Testing the camera on a phone needs https, so use the Vercel link for that
-(localhost works on the laptop itself).
+## Demo
+
+`npm run seed:demo -- demo@your-email.com a-password`
+
+Makes a made-up person, "Sam", with 6 signals. The clips in `demo/clips` are
+drawn illustrations and are labelled as demos. Put the printed
+`VITE_DEMO_PERSON_ID` in `.env.local` (and Vercel) and the home page gets a
+"Try it as a nurse" button. Each click makes a fresh 2 hour code, so the demo
+never expires.
 
 ## Phone alerts (web push)
 
@@ -43,17 +60,31 @@ Testing the camera on a phone needs https, so use the Vercel link for that
 Push is a bonus. If it's not set up, asks still reach the family's inbox live.
 On iPhone, alerts only work after "Add to Home Screen".
 
-## Scripts
+## Checks
 
-- `npm run dev` - run locally
-- `npm run build` - build for production
-- `npm run contrast` - check our colors pass WCAG contrast
-- `npm run vapid` - make the keys for phone alerts
+- `npm run test:rls -- a@email.com b@email.com password` - security tests
+  against the real database, using only the public key (the same power an
+  attacker has). Needs two emails you own.
+- `npm run audit:ui` - accessibility, measured with axe-core. Run
+  `npm run build && npm run preview` first, or pass your site's URL. Add an
+  email and password to check the family pages too. First time only:
+  `npx playwright install chromium`
+- `npm run contrast` - checks every color pair passes WCAG AA
 
 ## Deploying on Vercel
 
-Import the repo (preset: Vite), add `VITE_SUPABASE_URL` and
-`VITE_SUPABASE_ANON_KEY` and `VITE_VAPID_PUBLIC_KEY` as env variables (NOT sensitive), then redeploy.
-Vite bakes env variables in at build time, so any change needs a redeploy.
+1. Import the repo. Preset: Vite. `vercel.json` already handles page routes and
+   the service worker.
+2. Add these environment variables (mark them **not** sensitive):
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+   - `VITE_VAPID_PUBLIC_KEY`
+   - `VITE_DEMO_PERSON_ID`
+3. **Redeploy.** Vite bakes env variables in at build time.
+4. In Supabase → **Authentication → URL Configuration**: set Site URL to your
+   Vercel URL and add `https://<your-domain>/**` to Redirect URLs.
+
+Then open `/debug` on the live site, and test on two real devices, including
+the phone buzzing with the browser closed.
 
 Never put the `service_role` / secret key anywhere in this repo.

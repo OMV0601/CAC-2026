@@ -5,11 +5,13 @@ import SignalFields, { emptySignalFields, type SignalFieldValues } from '../comp
 import { getErrorMessage } from '../lib/errors'
 import { saveSignal } from '../lib/saveSignal'
 import { makePoster } from '../lib/video'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // longest clip you can record
 const MAX_SECONDS = 15
 
 function RecordSignal() {
+  usePageTitle('Record a signal')
   const { personId } = useParams()
   const navigate = useNavigate()
 

@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import type { Person } from '../lib/types'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // the list of people you look after, plus a form to add someone new
 function People() {
+  usePageTitle('Your people')
   const navigate = useNavigate()
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)

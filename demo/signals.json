@@ -1,0 +1,56 @@
+[
+  {
+    "clip": "rock",
+    "title": "Rocks forward and back, low hum",
+    "meaning": "Pain, usually tummy",
+    "action": "Check when he last ate or used the bathroom. A heat pack on his tummy helps.",
+    "body_region": "whole_body",
+    "has_sound": true,
+    "flacc_category": "cry"
+  },
+  {
+    "clip": "flap",
+    "title": "Flaps both hands fast, smiling",
+    "meaning": "Excited, happy",
+    "action": "Nothing needed. He's enjoying himself.",
+    "body_region": "hands",
+    "has_sound": false,
+    "flacc_category": null
+  },
+  {
+    "clip": "ears",
+    "title": "Covers ears, squeezes eyes shut",
+    "meaning": "Too loud or too bright",
+    "action": "Dim the lights, lower voices, or move him somewhere quiet.",
+    "body_region": "face",
+    "has_sound": false,
+    "flacc_category": null
+  },
+  {
+    "clip": "chin",
+    "title": "Taps his chin, again and again",
+    "meaning": "Thirsty",
+    "action": "Offer water with a straw.",
+    "body_region": "hands",
+    "has_sound": false,
+    "flacc_category": null
+  },
+  {
+    "clip": "kick",
+    "title": "Leans back and kicks legs straight",
+    "meaning": "Uncomfortable, needs to be moved",
+    "action": "Help him shift position. Check his chair strap isn't pinching.",
+    "body_region": "legs",
+    "has_sound": false,
+    "flacc_category": "legs"
+  },
+  {
+    "clip": "eee",
+    "title": "Short high 'eee' sounds",
+    "meaning": "Wants you to come back",
+    "action": "Say his name and tell him when you'll be back.",
+    "body_region": "face",
+    "has_sound": true,
+    "flacc_category": null
+  }
+]

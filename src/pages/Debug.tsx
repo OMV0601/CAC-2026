@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { getErrorMessage } from '../lib/errors'
+import { demoPersonId } from '../lib/demo'
 import { vapidPublicKey } from '../lib/push'
 import { isConfigured, supabase, supabaseKey, supabaseUrl } from '../lib/supabase'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // the status board. it checks each piece of setup from INSIDE the
 // running app and says what's missing, so when something breaks at 11pm
@@ -60,6 +62,14 @@ async function runChecks(): Promise<Check[]> {
     detail: vapidPublicKey
       ? 'Set. Phone alerts can work.'
       : 'Not set, so phone alerts are off. Run: npm run vapid -- you@example.com',
+  })
+
+  results.push({
+    name: 'VITE_DEMO_PERSON_ID',
+    status: demoPersonId ? 'ok' : 'skipped',
+    detail: demoPersonId
+      ? 'Set. The "Try it as a nurse" button shows on the home page.'
+      : 'Not set, so there is no demo button. Run: npm run seed:demo -- email password',
   })
 
   // no point checking the rest without a client
@@ -166,6 +176,7 @@ function StatusBadge({ status }: { status: Status }) {
 }
 
 function Debug() {
+  usePageTitle('Status')
   const [checks, setChecks] = useState<Check[]>([])
   const [loading, setLoading] = useState(true)
   // bumping this number makes the checks run again

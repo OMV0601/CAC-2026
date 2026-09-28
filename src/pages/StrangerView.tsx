@@ -9,12 +9,14 @@ import { getErrorMessage } from '../lib/errors'
 import { loadLexicon } from '../lib/lexicon'
 import { supabase } from '../lib/supabase'
 import { niceTime, type Signal } from '../lib/types'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // what claim_grant() sends back when the code works
 type CodeInfo = {
   ok: true
   person_id: string
   person_name: string
+  is_demo?: boolean
   label: string | null
   expires_at: string
 }
@@ -37,6 +39,8 @@ function StrangerView() {
   const [problem, setProblem] = useState('')
   // the clip they tapped "compare" on
   const [picked, setPicked] = useState<Signal | null>(null)
+
+  usePageTitle(info ? info.person_name : 'Opening')
 
   useEffect(() => {
     async function open() {
@@ -93,13 +97,19 @@ function StrangerView() {
 
   return (
     <div>
+      {info.is_demo && (
+        <p className="mb-4 rounded-lg border-2 border-warn bg-card p-3 text-sm">
+          <strong className="text-warn">Demo.</strong> {info.person_name} is made up and the clips are
+          drawings. Questions you send go to a demo family's inbox.
+        </p>
+      )}
       <h1 className="font-serif text-3xl font-bold">How {info.person_name} communicates</h1>
       <p className="mt-2 text-lg">
         {info.person_name} can't tell you in words. These clips were recorded by the people who know
         them best, and show what their sounds and movements mean.
       </p>
       <p className="mt-2 text-sm text-muted">
-        Shared by their family{info.label ? ' for ' + info.label : ''}. Works until{' '}
+        Shared by their family{info.label ? ' (' + info.label + ')' : ''}. Works until{' '}
         {niceTime(info.expires_at)}.
       </p>
 

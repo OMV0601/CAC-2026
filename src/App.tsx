@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase'
 import AccessLog from './pages/AccessLog'
 import Codes from './pages/Codes'
 import Debug from './pages/Debug'
+import Demo from './pages/Demo'
 import Home from './pages/Home'
 import Inbox from './pages/Inbox'
 import People from './pages/People'
@@ -21,7 +22,7 @@ function App() {
 
   // strangers with a code get a plain header with no sign in stuff.
   // a nurse should never be pushed toward making an account
-  const isStranger = location.pathname.startsWith('/c/')
+  const isStranger = location.pathname.startsWith('/c/') || location.pathname === '/demo'
 
   async function signOut() {
     if (!supabase) return
@@ -78,6 +79,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/debug" element={<Debug />} />
+          <Route path="/demo" element={<Demo />} />
 
           {/* the stranger page. NOT behind sign in on purpose */}
           <Route path="/c/:token" element={<StrangerView />} />
@@ -151,6 +153,13 @@ function App() {
           />
         </Routes>
       </main>
+
+      {/* the stranger page has its own note at the bottom */}
+      {!isStranger && (
+        <footer className="mx-auto max-w-3xl px-4 pb-8 text-sm text-muted">
+          <p className="border-t border-line pt-4">Lexicon never interprets. It only retrieves.</p>
+        </footer>
+      )}
     </div>
   )
 }

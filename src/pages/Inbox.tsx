@@ -4,6 +4,7 @@ import PushToggle from '../components/PushToggle'
 import { getErrorMessage } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { niceTime, type Ask } from '../lib/types'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // an ask plus the person's name and which code it came from
 type AskRow = Ask & {
@@ -14,6 +15,7 @@ type AskRow = Ask & {
 // the family's inbox. when a nurse asks "what is this?", it shows up here
 // live. answer it and it pops up on their screen
 function Inbox() {
+  usePageTitle('Inbox')
   const [asks, setAsks] = useState<AskRow[]>([])
   const [urls, setUrls] = useState<Record<string, string>>({})
   // asks that were already saved as a signal

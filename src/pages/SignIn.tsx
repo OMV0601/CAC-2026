@@ -4,9 +4,11 @@ import SetupChecklist from '../components/SetupChecklist'
 import { isFamily, useAuth } from '../lib/auth'
 import { getAuthErrorMessage } from '../lib/authErrors'
 import { supabase } from '../lib/supabase'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // sign in and sign up are the same form, just a different button
 function SignIn() {
+  usePageTitle('Sign in')
   const { session } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

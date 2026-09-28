@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { getErrorMessage } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { codeLink, niceTime, type Grant } from '../lib/types'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // how long a code can last. the database clamps it to 15 min - 7 days anyway
 const lifetimes = [
@@ -21,6 +22,7 @@ function isActive(grant: Grant) {
 
 // family page for making QR codes to hand to a nurse, aide, sub, etc.
 function Codes() {
+  usePageTitle('Share codes')
   const { personId } = useParams()
   const [personName, setPersonName] = useState('')
   const [grants, setGrants] = useState<Grant[]>([])

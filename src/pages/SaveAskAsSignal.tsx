@@ -6,11 +6,13 @@ import { saveSignal } from '../lib/saveSignal'
 import { supabase } from '../lib/supabase'
 import type { Ask } from '../lib/types'
 import { makePoster } from '../lib/video'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // turns an answered ask into a permanent signal.
 // a phone call is forgotten after the shift. this way the next nurse
 // doesnt have to ask the same question again
 function SaveAskAsSignal() {
+  usePageTitle('Save as a signal')
   const { askId } = useParams()
   const navigate = useNavigate()
   const [ask, setAsk] = useState<(Ask & { people: { name: string } | null }) | null>(null)

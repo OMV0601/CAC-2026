@@ -6,6 +6,7 @@ import { loadLexicon } from '../lib/lexicon'
 import { deleteSignal } from '../lib/saveSignal'
 import { supabase } from '../lib/supabase'
 import type { Person as PersonRow, Signal } from '../lib/types'
+import { usePageTitle } from '../lib/usePageTitle'
 
 // one person's page: their name + the grid of every clip (their "lexicon")
 function Person() {
@@ -16,6 +17,8 @@ function Person() {
   const [urls, setUrls] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  usePageTitle(person?.name ?? 'Person')
 
   useEffect(() => {
     async function load() {

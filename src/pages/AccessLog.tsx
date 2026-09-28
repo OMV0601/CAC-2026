@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { getErrorMessage } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { niceTime } from '../lib/types'
+import { usePageTitle } from '../lib/usePageTitle'
 
 type LogRow = {
   id: number
@@ -25,6 +26,7 @@ function describe(row: LogRow) {
 // the family can see exactly who looked. nobody can fake or delete these
 // (only the database functions can write here, see 0001 and 0003)
 function AccessLog() {
+  usePageTitle('Who looked')
   const { personId } = useParams()
   const [rows, setRows] = useState<LogRow[]>([])
   const [loading, setLoading] = useState(true)
