@@ -47,7 +47,10 @@ function Home() {
         </p>
 
         {!isConfigured && (
-          <div className="mt-6">
+          <div className="mt-6 space-y-4">
+            <Link to="/autodemo" className="btn">
+              ▶ Watch the auto demo
+            </Link>
             <SetupChecklist />
           </div>
         )}
@@ -61,6 +64,9 @@ function Home() {
             )}
             <Link to="/signin" className={demoPersonId ? 'btn-secondary' : 'btn'}>
               Family sign in
+            </Link>
+            <Link to="/autodemo" className="btn-secondary">
+              ▶ Watch the auto demo
             </Link>
           </div>
         )}

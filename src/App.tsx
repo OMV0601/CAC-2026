@@ -3,6 +3,7 @@ import RequireAuth from './components/RequireAuth'
 import { isFamily, useAuth } from './lib/auth'
 import { supabase } from './lib/supabase'
 import AccessLog from './pages/AccessLog'
+import AutoDemo from './pages/AutoDemo'
 import Codes from './pages/Codes'
 import Debug from './pages/Debug'
 import Demo from './pages/Demo'
@@ -23,6 +24,9 @@ function App() {
   // strangers with a code get a plain header with no sign in stuff.
   // a nurse should never be pushed toward making an account
   const isStranger = location.pathname.startsWith('/c/') || location.pathname === '/demo'
+
+  // the auto demo fills the whole screen, no header or footer
+  if (location.pathname === '/autodemo') return <AutoDemo />
 
   async function signOut() {
     if (!supabase) return

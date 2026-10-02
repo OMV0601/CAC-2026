@@ -46,6 +46,18 @@ drawn illustrations and are labelled as demos. Put the printed
 "Try it as a nurse" button. Each click makes a fresh 2 hour code, so the demo
 never expires.
 
+## Auto demo and slides
+
+- `/autodemo` plays the whole story by itself on two phones side by side
+  (made-up family, same screens as the real app). There's a button for it on
+  the home page.
+- `/presentation/index.html` has the slides from our demo video
+  (arrow keys to move).
+- `video/` has the video script and the script that records and edits the
+  video (`video/build-video.mjs`). Voice files can be mp3, m4a or mp4, named
+  like `05-om.mp3`. Our photos for the "who we are" slide are in
+  `public/presentation/team/`.
+
 ## Phone alerts (web push)
 
 1. `npm run vapid -- you@example.com`
